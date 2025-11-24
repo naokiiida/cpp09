@@ -1,4 +1,5 @@
 #include "RPN.hpp"
+#include <stdexcept>
 
 // Default constructor
 RPN::RPN(void) {}

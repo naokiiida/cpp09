@@ -40,7 +40,7 @@ BitcoinExchange::~BitcoinExchange(void)
 
 std::string BitcoinExchange::readFile(const std::string &filename)
 {
-	std::ifstream file(filename);
+	std::ifstream file(filename.c_str());
 	if (!file.is_open())
 	{
 		throw std::runtime_error("Failed to open file: " + filename);
