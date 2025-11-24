@@ -1,94 +1,212 @@
 #include "PmergeMe.hpp"
-#include <iostream>
 
-// Default constructor
-PmergeMe::PmergeMe(void)
-{
-    std::cout << "Default constructor called\n";
+PmergeMe::PmergeMe(void) : _time_vec(0.0), _time_deq(0.0) {}
+
+PmergeMe::PmergeMe(int argc, char **argv) : _time_vec(0.0), _time_deq(0.0) {
+    parseInput(argc, argv);
 }
 
-// Copy constructor
-PmergeMe::PmergeMe(const PmergeMe &other)
-{
-    std::cout << "Copy constructor called\n";
-    (void) other;
+PmergeMe::PmergeMe(const PmergeMe& other) {
+    *this = other;
 }
 
-// Assignment operator overload
-PmergeMe &PmergeMe::operator=(const PmergeMe &other)
-{
-    std::cout << "Assignment operator called\n";
-    if (this != &other)
-    {
-        (void) other;
+PmergeMe& PmergeMe::operator=(const PmergeMe& other) {
+    if (this != &other) {
+        _vec = other._vec;
+        _deq = other._deq;
+        _input = other._input;
+        _time_vec = other._time_vec;
+        _time_deq = other._time_deq;
     }
-    return (*this);
+    return *this;
 }
 
-// Destructor
-PmergeMe::~PmergeMe(void)
-{
-    std::cout << "Destructor called\n";
-}
+PmergeMe::~PmergeMe(void) {}
 
-PmergeMe::PmergeMe(std::vector<int> &vec) : _vec(vec)
-{
-    std::cout << "Constructor with vector called\n";
-}
+// --- Input Parsing ---
+void PmergeMe::parseInput(int argc, char **argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::string arg(argv[i]);
+        std::stringstream ss(arg);
+        std::string num_str;
 
-PmergeMe::PmergeMe(int ac, char **av)
-{
-    std::cout << "Constructor with arguments called\n";
-    try
-    {
-        parseArgs(ac, av);
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Error: " << e.what() << "\n";
-        exit(1);
-    }
-}
-
-void PmergeMe::parseArgs(int ac, char **av)
-{
-    std::cout << "Parsing arguments\n";
-    for (int i = 1; i < ac; i++)
-    {
-        std::string arg = av[i];
-        if (arg.find_first_not_of("0123456789") != std::string::npos)
-        {
-            throw std::invalid_argument("Invalid argument '" + arg + "'");
+        while (ss >> num_str) {
+            for (size_t j = 0; j < num_str.length(); ++j) {
+                if (!std::isdigit(num_str[j])) {
+                    throw std::invalid_argument("Error: non-digit character in input.");
+                }
+            }
+            long val;
+            std::stringstream convert(num_str);
+            convert >> val;
+            if (val < 0 || val > std::numeric_limits<int>::max()) {
+                throw std::invalid_argument("Error: number is negative or out of integer range.");
+            }
+            _input.push_back(static_cast<int>(val));
         }
-        std::cout << "Parsed argument: " << arg << "\n";
-        _vec.push_back(std::stoi(arg));
+    }
+    if (_input.empty()) {
+        throw std::invalid_argument("Error: no input provided.");
     }
 }
 
-void PmergeMe::mergeSort(std::vector<int> &vec)
-{
-    std::cout << "Merge sort called\n";
-    if (vec.size() <= 1)
-    {
-        return;
-    }
-    std::vector<int> left(vec.begin(), vec.begin() + vec.size() / 2);
-    std::vector<int> right(vec.begin() + vec.size() / 2, vec.end());
-    mergeSort(left);
-    mergeSort(right);
-    std::merge(left.begin(), left.end(), right.begin(), right.end(), vec.begin());
+// --- Main Execution Logic ---
+void PmergeMe::run() {
+    printSequence("Before: ", _input);
+    sortAndMeasure();
+    printSequence("After:  ", _vec);
+
+    std::cout << "Time to process a range of " << _input.size()
+              << " elements with std::vector : " << _time_vec << " us\n";
+    std::cout << "Time to process a range of " << _input.size()
+              << " elements with std::deque  : " << _time_deq << " us\n";
 }
 
-void PmergeMe::mergeInsertionSort(std::vector<int> &vec)
-{
-    std::cout << "Merge-insert sort called\n";
-    if (vec.size() <= 1)
-    {
-        return;
+void PmergeMe::sortAndMeasure() {
+    // Vector
+    _vec = _input;
+    clock_t start_vec = clock();
+    mergeInsertSort(_vec);
+    clock_t end_vec = clock();
+    _time_vec = static_cast<double>(end_vec - start_vec) * 1000000.0 / CLOCKS_PER_SEC;
+
+    // Deque
+    _deq.assign(_input.begin(), _input.end());
+    clock_t start_deq = clock();
+    mergeInsertSort(_deq);
+    clock_t end_deq = clock();
+    _time_deq = static_cast<double>(end_deq - start_deq) * 1000000.0 / CLOCKS_PER_SEC;
+}
+
+// --- Vector Implementation ---
+void PmergeMe::mergeInsertSort(std::vector<int>& c) {
+    const size_t n = c.size();
+    if (n <= 1) return;
+
+    int straggler = -1;
+    bool has_straggler = (n % 2 != 0);
+    if (has_straggler) {
+        straggler = c.back();
+        c.pop_back();
     }
-    std::vector<int> left(vec.begin(), vec.begin() + vec.size() / 2);
-    std::vector<int> right(vec.begin() + vec.size() / 2, vec.end());
-    mergeSort(left);
-    mergeSort(right);
-    std::merge(left.begin(), left.end(), right.begin(), right.end(), vec.begin());
+
+    std::vector<std::pair<int, int> > pairs;
+    for (size_t i = 0; i < c.size(); i += 2) {
+        if (c[i] > c[i+1]) pairs.push_back(std::make_pair(c[i], c[i+1]));
+        else pairs.push_back(std::make_pair(c[i+1], c[i]));
+    }
+
+    std::vector<int> main_chain;
+    main_chain.reserve(pairs.size());
+    for (size_t i = 0; i < pairs.size(); ++i) main_chain.push_back(pairs[i].first);
+
+    mergeInsertSort(main_chain);
+
+    std::vector<std::pair<int, int> > sorted_pairs;
+    sorted_pairs.reserve(main_chain.size());
+    for (size_t i = 0; i < main_chain.size(); ++i) {
+        int b = main_chain[i];
+        for (size_t j = 0; j < pairs.size(); ++j) {
+            if (pairs[j].first == b) {
+                sorted_pairs.push_back(pairs[j]);
+                break;
+            }
+        }
+    }
+
+    c.clear();
+    c.reserve(n);
+    if (!sorted_pairs.empty()) c.push_back(sorted_pairs[0].second);
+    for (size_t i = 0; i < main_chain.size(); ++i) c.push_back(main_chain[i]);
+
+    std::vector<size_t> insertion_order;
+    size_t pend_count = sorted_pairs.size();
+    size_t last_jacob = 1;
+    size_t jacob_idx = 3;
+    while (last_jacob < pend_count) {
+        size_t end = (jacob_idx < pend_count) ? jacob_idx : pend_count;
+        for (size_t i = end; i > last_jacob; --i) insertion_order.push_back(i - 1);
+        size_t temp = jacob_idx;
+        jacob_idx = jacob_idx + 2 * last_jacob;
+        last_jacob = temp;
+    }
+
+    for (size_t i = 0; i < insertion_order.size(); ++i) {
+        size_t k = insertion_order[i];
+        int elem_to_insert = sorted_pairs[k].second;
+        int partner_b = sorted_pairs[k].first;
+        std::vector<int>::iterator search_end = std::lower_bound(c.begin(), c.end(), partner_b);
+        std::vector<int>::iterator insert_pos = std::lower_bound(c.begin(), search_end, elem_to_insert);
+        c.insert(insert_pos, elem_to_insert);
+    }
+
+    if (has_straggler) {
+        std::vector<int>::iterator insert_pos = std::lower_bound(c.begin(), c.end(), straggler);
+        c.insert(insert_pos, straggler);
+    }
+}
+
+// --- Deque Implementation ---
+void PmergeMe::mergeInsertSort(std::deque<int>& c) {
+    const size_t n = c.size();
+    if (n <= 1) return;
+
+    int straggler = -1;
+    bool has_straggler = (n % 2 != 0);
+    if (has_straggler) {
+        straggler = c.back();
+        c.pop_back();
+    }
+
+    std::deque<std::pair<int, int> > pairs;
+    for (size_t i = 0; i < c.size(); i += 2) {
+        if (c[i] > c[i+1]) pairs.push_back(std::make_pair(c[i], c[i+1]));
+        else pairs.push_back(std::make_pair(c[i+1], c[i]));
+    }
+
+    std::deque<int> main_chain;
+    for (size_t i = 0; i < pairs.size(); ++i) main_chain.push_back(pairs[i].first);
+
+    mergeInsertSort(main_chain);
+
+    std::deque<std::pair<int, int> > sorted_pairs;
+    for (size_t i = 0; i < main_chain.size(); ++i) {
+        int b = main_chain[i];
+        for (size_t j = 0; j < pairs.size(); ++j) {
+            if (pairs[j].first == b) {
+                sorted_pairs.push_back(pairs[j]);
+                break;
+            }
+        }
+    }
+
+    c.clear();
+    if (!sorted_pairs.empty()) c.push_back(sorted_pairs[0].second);
+    for (size_t i = 0; i < main_chain.size(); ++i) c.push_back(main_chain[i]);
+
+    std::vector<size_t> insertion_order;
+    size_t pend_count = sorted_pairs.size();
+    size_t last_jacob = 1;
+    size_t jacob_idx = 3;
+    while (last_jacob < pend_count) {
+        size_t end = (jacob_idx < pend_count) ? jacob_idx : pend_count;
+        for (size_t i = end; i > last_jacob; --i) insertion_order.push_back(i - 1);
+        size_t temp = jacob_idx;
+        jacob_idx = jacob_idx + 2 * last_jacob;
+        last_jacob = temp;
+    }
+
+    for (size_t i = 0; i < insertion_order.size(); ++i) {
+        size_t k = insertion_order[i];
+        int elem_to_insert = sorted_pairs[k].second;
+        int partner_b = sorted_pairs[k].first;
+        std::deque<int>::iterator search_end = std::lower_bound(c.begin(), c.end(), partner_b);
+        std::deque<int>::iterator insert_pos = std::lower_bound(c.begin(), search_end, elem_to_insert);
+        c.insert(insert_pos, elem_to_insert);
+    }
+
+    if (has_straggler) {
+        std::deque<int>::iterator insert_pos = std::lower_bound(c.begin(), c.end(), straggler);
+        c.insert(insert_pos, straggler);
+    }
 }

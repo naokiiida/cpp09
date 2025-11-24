@@ -1,22 +1,22 @@
 #include "PmergeMe.hpp"
 #include <iostream>
 
-int main(int ac, char **av)
+int main(int argc, char **argv)
 {
-	if (ac < 2)
+	if (argc < 2)
 	{
-		std::cerr << "Error: Invalid number of arguments" << std::endl;
+		std::cerr << "Error: Please provide a sequence of positive integers.\n";
 		return 1;
 	}
+
 	try
 	{
-		PmergeMe pmerge(ac - 1, av + 1);
-		// pmerge.sort();
-		// pmerge.print();
+		PmergeMe pmergeme(argc, argv);
+		pmergeme.run();
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "Error: " << e.what() << std::endl;
+		std::cerr << e.what() << std::endl;
 		return 1;
 	}
 	return 0;
