@@ -40,8 +40,7 @@ check: $(OBJS)
 	./$(NAME)
 
 run: $(NAME)
-	./$< 9 3 4 1 434 525234323 0  0     2
-	# ./tests.sh
+	./tests.sh
 
 cmd:
 	@compiledb make re
