@@ -134,6 +134,40 @@ test_error "No input"
 # Test 13: Mixed valid/invalid
 test_error "Mixed input" 3 5 7x 9
 
+echo -e "${BLUE}=== Comparison Count Tests ===${NC}"
+echo
+
+# Function to test comparison counts
+test_comparisons() {
+    local name="$1"
+    shift
+    local input="$@"
+    local count=$(echo "$input" | wc -w | tr -d ' ')
+
+    echo -e "${YELLOW}Test: ${name} (${count} elements)${NC}"
+
+    output=$(./PmergeMe $input 2>&1)
+    comparisons=$(echo "$output" | grep "Number of comparisons:" | awk '{print $NF}')
+
+    if [ -n "$comparisons" ]; then
+        echo "Comparisons: $comparisons"
+        echo -e "${GREEN}✓ PASS${NC}"
+        ((PASS++))
+    else
+        echo -e "${RED}✗ FAIL: No comparison count${NC}"
+        ((FAIL++))
+    fi
+    echo
+}
+
+# Test various sizes to see comparison counts (using odd numbers to test straggler handling)
+test_comparisons "5 elements" 3 5 9 7 4
+test_comparisons "11 elements" $(seq 1 11 | tr '\n' ' ')
+test_comparisons "15 elements" $(seq 1 15 | tr '\n' ' ')
+test_comparisons "21 elements" $(seq 1 21 | tr '\n' ' ')
+test_comparisons "25 elements" $(seq 1 25 | tr '\n' ' ')
+test_comparisons "31 elements" $(seq 1 31 | tr '\n' ' ')
+
 echo -e "${BLUE}=== Performance Tests ===${NC}"
 echo
 

@@ -34,6 +34,9 @@ private:
     double _time_vec;
     double _time_deq;
 
+    // Comparison counter
+    mutable size_t _comparisons;
+
     // Private helper methods
     void parseInput(int argc, char **argv);
     void sortAndMeasure();
@@ -43,6 +46,11 @@ private:
 
     // Ford-Johnson sort implementation for std::deque
     void mergeInsertSort(std::deque<int>& c);
+
+    // Comparison counting helpers
+    size_t countLowerBoundComparisons(size_t distance) const;
+    void resetComparisons();
+    size_t getComparisons() const;
 
     // Helper to print a sequence
     template <typename Container>

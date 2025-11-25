@@ -1,8 +1,8 @@
 #include "PmergeMe.hpp"
 
-PmergeMe::PmergeMe(void) : _time_vec(0.0), _time_deq(0.0) {}
+PmergeMe::PmergeMe(void) : _time_vec(0.0), _time_deq(0.0), _comparisons(0) {}
 
-PmergeMe::PmergeMe(int argc, char **argv) : _time_vec(0.0), _time_deq(0.0) {
+PmergeMe::PmergeMe(int argc, char **argv) : _time_vec(0.0), _time_deq(0.0), _comparisons(0) {
     parseInput(argc, argv);
 }
 
@@ -22,6 +22,28 @@ PmergeMe& PmergeMe::operator=(const PmergeMe& other) {
 }
 
 PmergeMe::~PmergeMe(void) {}
+
+// --- Comparison Counting Helpers ---
+void PmergeMe::resetComparisons() {
+    _comparisons = 0;
+}
+
+size_t PmergeMe::getComparisons() const {
+    return _comparisons;
+}
+
+// Calculate number of comparisons made by std::lower_bound
+// Binary search performs ceil(log2(n+1)) comparisons in worst case
+size_t PmergeMe::countLowerBoundComparisons(size_t distance) const {
+    if (distance == 0) return 0;
+    size_t count = 0;
+    size_t n = distance;
+    while (n > 0) {
+        n >>= 1;
+        count++;
+    }
+    return count;
+}
 
 // --- Input Parsing ---
 void PmergeMe::parseInput(int argc, char **argv) {
@@ -60,17 +82,19 @@ void PmergeMe::run() {
               << " elements with std::vector : " << _time_vec << " us\n";
     std::cout << "Time to process a range of " << _input.size()
               << " elements with std::deque  : " << _time_deq << " us\n";
+    std::cout << "Number of comparisons: " << _comparisons << "\n";
 }
 
 void PmergeMe::sortAndMeasure() {
-    // Vector
+    // Vector (with comparison counting)
     _vec = _input;
+    resetComparisons();
     clock_t start_vec = clock();
     mergeInsertSort(_vec);
     clock_t end_vec = clock();
     _time_vec = static_cast<double>(end_vec - start_vec) * 1000000.0 / CLOCKS_PER_SEC;
 
-    // Deque
+    // Deque (without comparison counting to avoid duplication)
     _deq.assign(_input.begin(), _input.end());
     clock_t start_deq = clock();
     mergeInsertSort(_deq);
@@ -92,6 +116,7 @@ void PmergeMe::mergeInsertSort(std::vector<int>& c) {
 
     std::vector<std::pair<int, int> > pairs;
     for (size_t i = 0; i < c.size(); i += 2) {
+        _comparisons++; // Count pairwise comparison
         if (c[i] > c[i+1]) pairs.push_back(std::make_pair(c[i], c[i+1]));
         else pairs.push_back(std::make_pair(c[i+1], c[i]));
     }
@@ -136,11 +161,14 @@ void PmergeMe::mergeInsertSort(std::vector<int>& c) {
         int elem_to_insert = sorted_pairs[k].second;
         int partner_b = sorted_pairs[k].first;
         std::vector<int>::iterator search_end = std::lower_bound(c.begin(), c.end(), partner_b);
+        size_t search_range = std::distance(c.begin(), search_end);
+        _comparisons += countLowerBoundComparisons(search_range);
         std::vector<int>::iterator insert_pos = std::lower_bound(c.begin(), search_end, elem_to_insert);
         c.insert(insert_pos, elem_to_insert);
     }
 
     if (has_straggler) {
+        _comparisons += countLowerBoundComparisons(c.size());
         std::vector<int>::iterator insert_pos = std::lower_bound(c.begin(), c.end(), straggler);
         c.insert(insert_pos, straggler);
     }
