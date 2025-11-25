@@ -1,4 +1,5 @@
 #include "PmergeMe.hpp"
+#include <cmath>
 
 PmergeMe::PmergeMe(void) : _time_vec(0.0), _time_deq(0.0), _comparisons(0) {}
 
@@ -22,6 +23,18 @@ PmergeMe& PmergeMe::operator=(const PmergeMe& other) {
 }
 
 PmergeMe::~PmergeMe(void) {}
+
+// --- Theoretical Minimum Calculation ---
+size_t PmergeMe::getTheoreticalComparisons(size_t n) const {
+    if (n <= 1) {
+        return 0;
+    }
+    double log2_factorial = 0.0;
+    for (size_t i = 2; i <= n; ++i) {
+        log2_factorial += std::log2(static_cast<double>(i));
+    }
+    return static_cast<size_t>(std::ceil(log2_factorial));
+}
 
 // --- Comparison Counting Helpers ---
 void PmergeMe::resetComparisons() {
@@ -82,7 +95,9 @@ void PmergeMe::run() {
               << " elements with std::vector : " << _time_vec << " us\n";
     std::cout << "Time to process a range of " << _input.size()
               << " elements with std::deque  : " << _time_deq << " us\n";
-    std::cout << "Number of comparisons: " << _comparisons << "\n";
+    std::cout << "Number of comparisons made: " << getComparisons() << "\n";
+    size_t theoretical_min = getTheoreticalComparisons(_input.size());
+    std::cout << "Theoretical minimum comparisons for " << _input.size() << " elements: " << theoretical_min << "\n";
 }
 
 void PmergeMe::sortAndMeasure() {

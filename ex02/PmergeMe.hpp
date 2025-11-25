@@ -48,6 +48,7 @@ private:
     void mergeInsertSort(std::deque<int>& c);
 
     // Comparison counting helpers
+    size_t getTheoreticalComparisons(size_t n) const;
     size_t countLowerBoundComparisons(size_t distance) const;
     void resetComparisons();
     size_t getComparisons() const;

@@ -147,14 +147,27 @@ test_comparisons() {
     echo -e "${YELLOW}Test: ${name} (${count} elements)${NC}"
 
     output=$(./PmergeMe $input 2>&1)
-    comparisons=$(echo "$output" | grep "Number of comparisons:" | awk '{print $NF}')
+    actual_comparisons=$(echo "$output" | grep "Number of comparisons made:" | awk '{print $NF}')
+    theoretical_min=$(echo "$output" | grep "Theoretical minimum comparisons for" | awk '{print $NF}')
 
-    if [ -n "$comparisons" ]; then
-        echo "Comparisons: $comparisons"
-        echo -e "${GREEN}✓ PASS${NC}"
+    echo "  Actual Comparisons: $actual_comparisons"
+    echo "  Theoretical Minimum: $theoretical_min"
+
+    if [ -z "$actual_comparisons" ] || [ -z "$theoretical_min" ]; then
+        echo -e "${RED}✗ FAIL: Could not extract comparison counts${NC}"
+        echo "$output"
+        ((FAIL++))
+    elif (( actual_comparisons < theoretical_min )); then
+        echo -e "${RED}✗ FAIL: Actual comparisons ($actual_comparisons) less than theoretical minimum ($theoretical_min) - IMPOSSIBLE!${NC}"
+        ((FAIL++))
+    elif (( actual_comparisons == theoretical_min )); then
+        echo -e "${GREEN}✓ PASS: Actual ($actual_comparisons) matches theoretical minimum ($theoretical_min) (Optimal)${NC}"
+        ((PASS++))
+    elif (( actual_comparisons > theoretical_min )); then
+        echo -e "${YELLOW}✓ PASS (Sub-optimal): Actual ($actual_comparisons) exceeds theoretical minimum ($theoretical_min) by $((actual_comparisons - theoretical_min))${NC}"
         ((PASS++))
     else
-        echo -e "${RED}✗ FAIL: No comparison count${NC}"
+        echo -e "${RED}✗ FAIL: Unknown comparison result${NC}"
         ((FAIL++))
     fi
     echo
