@@ -154,6 +154,11 @@ void PmergeMe::mergeInsertSort(std::vector<int>& c) {
         }
     }
 
+    // Add virtual pair for straggler if present
+    if (has_straggler) {
+        sorted_pairs.push_back(std::make_pair(std::numeric_limits<int>::max(), straggler));
+    }
+
     c.clear();
     c.reserve(n);
     if (!sorted_pairs.empty()) c.push_back(sorted_pairs[0].second);
@@ -180,12 +185,6 @@ void PmergeMe::mergeInsertSort(std::vector<int>& c) {
         _comparisons += countLowerBoundComparisons(search_range);
         std::vector<int>::iterator insert_pos = std::lower_bound(c.begin(), search_end, elem_to_insert);
         c.insert(insert_pos, elem_to_insert);
-    }
-
-    if (has_straggler) {
-        _comparisons += countLowerBoundComparisons(c.size());
-        std::vector<int>::iterator insert_pos = std::lower_bound(c.begin(), c.end(), straggler);
-        c.insert(insert_pos, straggler);
     }
 }
 
@@ -223,6 +222,11 @@ void PmergeMe::mergeInsertSort(std::deque<int>& c) {
         }
     }
 
+    // Add virtual pair for straggler if present
+    if (has_straggler) {
+        sorted_pairs.push_back(std::make_pair(std::numeric_limits<int>::max(), straggler));
+    }
+
     c.clear();
     if (!sorted_pairs.empty()) c.push_back(sorted_pairs[0].second);
     for (size_t i = 0; i < main_chain.size(); ++i) c.push_back(main_chain[i]);
@@ -246,10 +250,5 @@ void PmergeMe::mergeInsertSort(std::deque<int>& c) {
         std::deque<int>::iterator search_end = std::lower_bound(c.begin(), c.end(), partner_b);
         std::deque<int>::iterator insert_pos = std::lower_bound(c.begin(), search_end, elem_to_insert);
         c.insert(insert_pos, elem_to_insert);
-    }
-
-    if (has_straggler) {
-        std::deque<int>::iterator insert_pos = std::lower_bound(c.begin(), c.end(), straggler);
-        c.insert(insert_pos, straggler);
     }
 }
