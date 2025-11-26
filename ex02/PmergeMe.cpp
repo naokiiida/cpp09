@@ -31,7 +31,8 @@ size_t PmergeMe::getTheoreticalComparisons(size_t n) const {
     }
     double log2_factorial = 0.0;
     for (size_t i = 2; i <= n; ++i) {
-        log2_factorial += std::log2(static_cast<double>(i));
+        // C++98 compatible: log2(x) = log(x) / log(2)
+        log2_factorial += std::log(static_cast<double>(i)) / std::log(2.0);
     }
     return static_cast<size_t>(std::ceil(log2_factorial));
 }
