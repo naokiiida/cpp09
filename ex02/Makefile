@@ -1,10 +1,8 @@
 NAME:=PmergeMe
 CXX:=c++
-SAN := -fsanitize=address -g
-CHECK := --analyzer
-STDFLG := -std=c++98
+STDFLG := -std=c++98 -pedantic
 DEPFLG := -MMD -MP
-WARNFLGS := -Wall -Wextra -Werror -pedantic -Wshadow -Wno-shadow
+WARNFLGS := -Wall -Wextra -Werror
 CXXFLAGS = $(STDFLG) $(DEPFLG) $(WARNFLGS)
 ODIR=obj/
 SRCS:=main.cpp PmergeMe.cpp
@@ -31,19 +29,8 @@ fclean: clean
 re: fclean
 	@make all
 
-leak: $(OBJS)
-	$(CXX) $(CXXFLAGS) $(SAN) -o $(NAME) $^
-	ASAN_OPTIONS=detect_leaks=1 ./$(NAME)
-
-check: $(OBJS)
-	$(CXX) $(CXXFLAGS) $(CHECK) -o $(NAME) $^
-	./$(NAME)
-
 run: $(NAME)
 	./tests.sh
-
-cmd:
-	@compiledb make re
 
 -include $(DEPS)
 
