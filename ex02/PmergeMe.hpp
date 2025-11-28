@@ -47,6 +47,10 @@ private:
     // Ford-Johnson sort implementation for std::deque
     void mergeInsertSort(std::deque<int>& c);
 
+    // Helper to sort pairs by first element
+    void sortPairsByFirst(std::vector<std::pair<int, int> >& pairs);
+    void sortPairsByFirst(std::deque<std::pair<int, int> >& pairs);
+
     // Comparison counting helpers
     size_t getTheoreticalComparisons(size_t n) const;
     size_t countLowerBoundComparisons(size_t distance) const;

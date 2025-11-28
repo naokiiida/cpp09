@@ -118,6 +118,38 @@ void PmergeMe::sortAndMeasure() {
     _time_deq = static_cast<double>(end_deq - start_deq) * 1000000.0 / CLOCKS_PER_SEC;
 }
 
+// --- Helper: Sort pairs by first element ---
+void PmergeMe::sortPairsByFirst(std::vector<std::pair<int, int> >& pairs) {
+    if (pairs.size() <= 1) return;
+
+    // Extract first elements (larger elements) to sort them
+    std::vector<int> first_elements;
+    first_elements.reserve(pairs.size());
+    for (size_t i = 0; i < pairs.size(); ++i) {
+        first_elements.push_back(pairs[i].first);
+    }
+
+    // Recursively sort the first elements
+    mergeInsertSort(first_elements);
+
+    // Rebuild pairs in sorted order based on sorted first elements
+    std::vector<std::pair<int, int> > sorted_pairs;
+    sorted_pairs.reserve(pairs.size());
+    for (size_t i = 0; i < first_elements.size(); ++i) {
+        int sorted_first = first_elements[i];
+        // Find the original pair with this first element
+        for (size_t j = 0; j < pairs.size(); ++j) {
+            if (pairs[j].first == sorted_first) {
+                sorted_pairs.push_back(pairs[j]);
+                break;
+            }
+        }
+    }
+
+    // Replace pairs with sorted_pairs
+    pairs = sorted_pairs;
+}
+
 // --- Vector Implementation ---
 void PmergeMe::mergeInsertSort(std::vector<int>& c) {
     const size_t n = c.size();
@@ -137,23 +169,19 @@ void PmergeMe::mergeInsertSort(std::vector<int>& c) {
         else pairs.push_back(std::make_pair(c[i+1], c[i]));
     }
 
+    // Recursively sort pairs by their first element (larger element)
+    // This maintains the pairing relationship automatically
+    sortPairsByFirst(pairs);
+
+    // Extract main_chain from sorted pairs (for building the initial sorted sequence)
     std::vector<int> main_chain;
     main_chain.reserve(pairs.size());
-    for (size_t i = 0; i < pairs.size(); ++i) main_chain.push_back(pairs[i].first);
-
-    mergeInsertSort(main_chain);
-
-    std::vector<std::pair<int, int> > sorted_pairs;
-    sorted_pairs.reserve(main_chain.size());
-    for (size_t i = 0; i < main_chain.size(); ++i) {
-        int b = main_chain[i];
-        for (size_t j = 0; j < pairs.size(); ++j) {
-            if (pairs[j].first == b) {
-                sorted_pairs.push_back(pairs[j]);
-                break;
-            }
-        }
+    for (size_t i = 0; i < pairs.size(); ++i) {
+        main_chain.push_back(pairs[i].first);
     }
+
+    // sorted_pairs is just pairs (already sorted)
+    std::vector<std::pair<int, int> >& sorted_pairs = pairs;
 
     // Add virtual pair for straggler if present
     if (has_straggler) {
@@ -189,6 +217,36 @@ void PmergeMe::mergeInsertSort(std::vector<int>& c) {
     }
 }
 
+// --- Helper: Sort deque pairs by first element ---
+void PmergeMe::sortPairsByFirst(std::deque<std::pair<int, int> >& pairs) {
+    if (pairs.size() <= 1) return;
+
+    // Extract first elements (larger elements) to sort them
+    std::deque<int> first_elements;
+    for (size_t i = 0; i < pairs.size(); ++i) {
+        first_elements.push_back(pairs[i].first);
+    }
+
+    // Recursively sort the first elements
+    mergeInsertSort(first_elements);
+
+    // Rebuild pairs in sorted order based on sorted first elements
+    std::deque<std::pair<int, int> > sorted_pairs;
+    for (size_t i = 0; i < first_elements.size(); ++i) {
+        int sorted_first = first_elements[i];
+        // Find the original pair with this first element
+        for (size_t j = 0; j < pairs.size(); ++j) {
+            if (pairs[j].first == sorted_first) {
+                sorted_pairs.push_back(pairs[j]);
+                break;
+            }
+        }
+    }
+
+    // Replace pairs with sorted_pairs
+    pairs = sorted_pairs;
+}
+
 // --- Deque Implementation ---
 void PmergeMe::mergeInsertSort(std::deque<int>& c) {
     const size_t n = c.size();
@@ -207,21 +265,18 @@ void PmergeMe::mergeInsertSort(std::deque<int>& c) {
         else pairs.push_back(std::make_pair(c[i+1], c[i]));
     }
 
+    // Recursively sort pairs by their first element (larger element)
+    // This maintains the pairing relationship automatically
+    sortPairsByFirst(pairs);
+
+    // Extract main_chain from sorted pairs (for building the initial sorted sequence)
     std::deque<int> main_chain;
-    for (size_t i = 0; i < pairs.size(); ++i) main_chain.push_back(pairs[i].first);
-
-    mergeInsertSort(main_chain);
-
-    std::deque<std::pair<int, int> > sorted_pairs;
-    for (size_t i = 0; i < main_chain.size(); ++i) {
-        int b = main_chain[i];
-        for (size_t j = 0; j < pairs.size(); ++j) {
-            if (pairs[j].first == b) {
-                sorted_pairs.push_back(pairs[j]);
-                break;
-            }
-        }
+    for (size_t i = 0; i < pairs.size(); ++i) {
+        main_chain.push_back(pairs[i].first);
     }
+
+    // sorted_pairs is just pairs (already sorted)
+    std::deque<std::pair<int, int> >& sorted_pairs = pairs;
 
     // Add virtual pair for straggler if present
     if (has_straggler) {
