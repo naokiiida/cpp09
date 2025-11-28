@@ -183,15 +183,27 @@ void PmergeMe::mergeInsertSort(std::vector<int>& c) {
     // sorted_pairs is just pairs (already sorted)
     std::vector<std::pair<int, int> >& sorted_pairs = pairs;
 
-    // Add virtual pair for straggler if present
-    if (has_straggler) {
-        sorted_pairs.push_back(std::make_pair(std::numeric_limits<int>::max(), straggler));
-    }
+    // Build initial sequence and track positions of larger elements
+    // position_map[k] = index in c where sorted_pairs[k].first is located
+    std::vector<size_t> position_map;
 
     c.clear();
     c.reserve(n);
+
+    // Insert first smaller element (it's the smallest overall)
     if (!sorted_pairs.empty()) c.push_back(sorted_pairs[0].second);
-    for (size_t i = 0; i < main_chain.size(); ++i) c.push_back(main_chain[i]);
+
+    // Insert all larger elements and track their positions (before adding straggler)
+    for (size_t i = 0; i < sorted_pairs.size(); ++i) {
+        position_map.push_back(c.size());  // Save position before inserting
+        c.push_back(sorted_pairs[i].first);
+    }
+
+    // Add virtual pair for straggler if present (after building initial sequence)
+    if (has_straggler) {
+        sorted_pairs.push_back(std::make_pair(std::numeric_limits<int>::max(), straggler));
+        position_map.push_back(c.size());  // Straggler's partner is at the end
+    }
 
     std::vector<size_t> insertion_order;
     size_t pend_count = sorted_pairs.size();
@@ -208,12 +220,25 @@ void PmergeMe::mergeInsertSort(std::vector<int>& c) {
     for (size_t i = 0; i < insertion_order.size(); ++i) {
         size_t k = insertion_order[i];
         int elem_to_insert = sorted_pairs[k].second;
-        int partner_b = sorted_pairs[k].first;
-        std::vector<int>::iterator search_end = std::lower_bound(c.begin(), c.end(), partner_b);
-        size_t search_range = std::distance(c.begin(), search_end);
+
+        // Use saved position instead of searching for partner
+        size_t search_end_pos = position_map[k];
+
+        // Update position_map for subsequent insertions
+        // Each insertion shifts positions of elements after insert point
+        size_t search_range = search_end_pos;
         _comparisons += countLowerBoundComparisons(search_range);
-        std::vector<int>::iterator insert_pos = std::lower_bound(c.begin(), search_end, elem_to_insert);
+
+        std::vector<int>::iterator insert_pos = std::lower_bound(c.begin(), c.begin() + search_end_pos, elem_to_insert);
+        size_t insert_index = std::distance(c.begin(), insert_pos);
         c.insert(insert_pos, elem_to_insert);
+
+        // Adjust all position_map entries after insertion point
+        for (size_t j = 0; j < sorted_pairs.size(); ++j) {
+            if (position_map[j] >= insert_index) {
+                position_map[j]++;
+            }
+        }
     }
 }
 
@@ -278,14 +303,26 @@ void PmergeMe::mergeInsertSort(std::deque<int>& c) {
     // sorted_pairs is just pairs (already sorted)
     std::deque<std::pair<int, int> >& sorted_pairs = pairs;
 
-    // Add virtual pair for straggler if present
-    if (has_straggler) {
-        sorted_pairs.push_back(std::make_pair(std::numeric_limits<int>::max(), straggler));
-    }
+    // Build initial sequence and track positions of larger elements
+    // position_map[k] = index in c where sorted_pairs[k].first is located
+    std::vector<size_t> position_map;
 
     c.clear();
+
+    // Insert first smaller element (it's the smallest overall)
     if (!sorted_pairs.empty()) c.push_back(sorted_pairs[0].second);
-    for (size_t i = 0; i < main_chain.size(); ++i) c.push_back(main_chain[i]);
+
+    // Insert all larger elements and track their positions (before adding straggler)
+    for (size_t i = 0; i < sorted_pairs.size(); ++i) {
+        position_map.push_back(c.size());  // Save position before inserting
+        c.push_back(sorted_pairs[i].first);
+    }
+
+    // Add virtual pair for straggler if present (after building initial sequence)
+    if (has_straggler) {
+        sorted_pairs.push_back(std::make_pair(std::numeric_limits<int>::max(), straggler));
+        position_map.push_back(c.size());  // Straggler's partner is at the end
+    }
 
     std::vector<size_t> insertion_order;
     size_t pend_count = sorted_pairs.size();
@@ -302,9 +339,19 @@ void PmergeMe::mergeInsertSort(std::deque<int>& c) {
     for (size_t i = 0; i < insertion_order.size(); ++i) {
         size_t k = insertion_order[i];
         int elem_to_insert = sorted_pairs[k].second;
-        int partner_b = sorted_pairs[k].first;
-        std::deque<int>::iterator search_end = std::lower_bound(c.begin(), c.end(), partner_b);
-        std::deque<int>::iterator insert_pos = std::lower_bound(c.begin(), search_end, elem_to_insert);
+
+        // Use saved position instead of searching for partner
+        size_t search_end_pos = position_map[k];
+
+        std::deque<int>::iterator insert_pos = std::lower_bound(c.begin(), c.begin() + search_end_pos, elem_to_insert);
+        size_t insert_index = std::distance(c.begin(), insert_pos);
         c.insert(insert_pos, elem_to_insert);
+
+        // Adjust all position_map entries after insertion point
+        for (size_t j = 0; j < sorted_pairs.size(); ++j) {
+            if (position_map[j] >= insert_index) {
+                position_map[j]++;
+            }
+        }
     }
 }
