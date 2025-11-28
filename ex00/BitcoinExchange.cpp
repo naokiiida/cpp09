@@ -8,10 +8,11 @@
 // Define the static member variable
 std::map<std::string, float> BitcoinExchange::rates;
 
-// Default constructor
-BitcoinExchange::BitcoinExchange(void)
+// Constructor with data file parameter
+BitcoinExchange::BitcoinExchange(const std::string &dataFile)
 {
-	std::cout << "Default constructor called\n";
+	std::cout << "Constructor called with file: " << dataFile << "\n";
+	initRates(dataFile);
 }
 
 // Copy constructor
@@ -71,11 +72,11 @@ std::map<std::string, float> BitcoinExchange::getRates(const std::string &fileCo
 	return rates;
 }
 
-void BitcoinExchange::initRates()
+void BitcoinExchange::initRates(const std::string &dataFile)
 {
 	try
 	{
-		const std::string fileContent = readFile("data.csv");
+		const std::string fileContent = readFile(dataFile);
 		rates = getRates(fileContent);
 	}
 	catch (const std::exception &e)
@@ -165,7 +166,7 @@ void BitcoinExchange::outputPrices(const std::string &fileContent)
         }
         catch (const std::exception& e)
         {
-            std::cerr << "Error: " << e.what() << "\n";
+            std::cerr << date << " => " << "Error: " << e.what() << "\n";
         }
     }
 }
