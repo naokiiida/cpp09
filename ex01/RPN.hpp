@@ -15,7 +15,7 @@ class RPN
         int calculate();
     private:
     	std::string _expression;
-        std::stack<int> _stack;
+        std::stack<long> _stack;
         static bool isValidNumber(const char& token);
 };
 

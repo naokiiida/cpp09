@@ -44,6 +44,7 @@ test_rpn "1 2 + +" "Error: Invalid expression"
 test_rpn "" "Error: Invalid expression"
 test_rpn "1 2" "Error: Invalid expression"
 test_rpn "10 0 /" "Error: Division by zero"
+test_rpn "9 9 * 9 * 9 * 9 * 9 * 9 * 9 * 9 * 9 *" "Error: Integer overflow"
 
 echo
 echo -e "Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"

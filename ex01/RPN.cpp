@@ -1,5 +1,6 @@
 #include "RPN.hpp"
 #include <stdexcept>
+#include <climits>
 
 // Default constructor
 RPN::RPN(void) {}
@@ -49,11 +50,11 @@ int RPN::calculate()
             {
                 throw std::runtime_error("Invalid expression");
             }
-            int b = _stack.top();
+            long b = _stack.top();
             _stack.pop();
-            int a = _stack.top();
+            long a = _stack.top();
             _stack.pop();
-            int result = 0;
+            long result = 0;
             switch (c)
             {
                 case '+':
@@ -73,6 +74,10 @@ int RPN::calculate()
                     result = a / b;
                     break;
             }
+            if (result > INT_MAX || result < INT_MIN)
+            {
+                throw std::runtime_error("Integer overflow");
+            }
             _stack.push(result);
         }
     }
@@ -80,5 +85,10 @@ int RPN::calculate()
     {
         throw std::runtime_error("Invalid expression");
     }
-    return _stack.top();
+    long final_result = _stack.top();
+    if (final_result > INT_MAX || final_result < INT_MIN)
+    {
+        throw std::runtime_error("Integer overflow");
+    }
+    return static_cast<int>(final_result);
 }
